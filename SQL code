@@ -1,0 +1,238 @@
+#I have created the assignment schema and I'm using the assignment database.
+
+# bajaj auto 
+# adding date_col as column
+
+alter table `bajaj auto`
+add date_col date;
+
+set SQL_SAFE_UPDATES = 0;
+
+update `bajaj auto` set date_col = str_to_date(date, '%d-%M-%Y');
+
+create table bajaj1 as select date_col as `Date`, `Close Price` as  `Close Price` , 
+  row_number() over fun as `rows`, 
+  if((ROW_NUMBER() over  fun) > 19,(avg(`Close Price`) over (order by date_col asc rows 19 preceding)), null) `20 Day MA`,
+  if((ROW_NUMBER() over  fun) > 49,(avg(`Close Price`) over (order by date_col asc rows 49 preceding)), null) `50 Day MA` 
+   from `bajaj auto` window fun as (order by date_col asc);
+  
+# from above table we have created a row_num to get data in sequence. 
+# according to our output we don't need of rows column
+  
+alter table bajaj1 drop column `rows`;
+select * from bajaj1;
+
+#eicher motors
+alter table `eicher motors`
+add date_col date;
+
+update `eicher motors` set date_col = str_to_date(date, '%d-%M-%Y');
+
+create table eicher1 as select date_col as `Date`, `Close Price` as  `Close Price` , 
+  row_number() over fun as `rows`, 
+  if((ROW_NUMBER() over  fun) > 19,(avg(`Close Price`) over (order by date_col asc rows 19 preceding)), null) `20 Day MA`,
+  if((ROW_NUMBER() over  fun) > 49,(avg(`Close Price`) over (order by date_col asc rows 49 preceding)), null) `50 Day MA` 
+   from `eicher motors` window fun as (order by date_col asc);
+
+alter table eicher1 drop column `rows`;
+select * from eicher1;
+
+#hero motocorp
+
+alter table `hero motocorp`
+add date_col date;
+update `hero motocorp` set date_col = str_to_date(date, '%d-%M-%Y');
+
+create table hero1 as select date_col as `Date`, `Close Price` as  `Close Price` , 
+  row_number() over fun as `rows`, 
+  if((ROW_NUMBER() over  fun) > 19,(avg(`Close Price`) over (order by date_col asc rows 19 preceding)), null) `20 Day MA`,
+  if((ROW_NUMBER() over  fun) > 49,(avg(`Close Price`) over (order by date_col asc rows 49 preceding)), null) `50 Day MA` 
+   from `hero motocorp` window fun as (order by date_col asc);
+
+alter table hero1 drop column `rows`;
+select * from hero1 order by Date;
+
+
+#infosys
+
+alter table `infosys`
+add date_col date;
+update `infosys` set date_col = str_to_date(date, '%d-%M-%Y');
+
+create table infosys1 as select date_col as `Date`, `Close Price` as  `Close Price` , 
+  row_number() over fun as `rows`, 
+  if((ROW_NUMBER() over  fun) > 19,(avg(`Close Price`) over (order by date_col asc rows 19 preceding)), null) `20 Day MA`,
+  if((ROW_NUMBER() over  fun) > 49,(avg(`Close Price`) over (order by date_col asc rows 49 preceding)), null) `50 Day MA` 
+   from `infosys` window fun as (order by date_col asc);
+
+alter table infosys1 drop column `rows`;
+select * from infosys1;
+
+# tcs 
+
+alter table `tcs`
+add date_col date;
+update `tcs` set date_col = str_to_date(date, '%d-%M-%Y');
+
+create table tcs1 as select date_col as `Date`, `Close Price` as  `Close Price` , 
+  row_number() over fun as `rows`, 
+  if((ROW_NUMBER() over  fun) > 19,(avg(`Close Price`) over (order by date_col asc rows 19 preceding)), null) `20 Day MA`,
+  if((ROW_NUMBER() over  fun) > 49,(avg(`Close Price`) over (order by date_col asc rows 49 preceding)), null) `50 Day MA` 
+   from `tcs` window fun as (order by date_col asc);
+
+alter table tcs1 drop column `rows`;
+select * from tcs1;
+
+#tvs motors
+
+alter table `tvs motors`
+add date_col date;
+update `tvs motors` set date_col = str_to_date(date, '%d-%M-%Y');
+
+create table tvs1 as select date_col as `Date`, `Close Price` as  `Close Price` , 
+  row_number() over fun as `rows`, 
+  if((ROW_NUMBER() over  fun) > 19,(avg(`Close Price`) over (order by date_col asc rows 19 preceding)), null) `20 Day MA`,
+  if((ROW_NUMBER() over  fun) > 49,(avg(`Close Price`) over (order by date_col asc rows 49 preceding)), null) `50 Day MA` 
+   from `tvs motors` window fun as (order by date_col asc);
+
+alter table tvs1 drop column `rows`;
+select * from tvs1 order by Date;
+
+## 2. Master table.
+
+create table Master_table
+select bajaj.date_col as Date , bajaj.`Close Price` as Bajaj , tcs.`Close Price` as TCS , 
+tvs.`Close Price` as TVS , inf.`Close Price` as Infosys , eic.`Close Price` as Eicher , her.`Close Price` as Hero from `bajaj auto` bajaj
+inner join `tcs` tcs on tcs.date_col=bajaj.date_col
+inner join `tvs motors` tvs on tvs.date_col=bajaj.date_col
+inner join `infosys` inf on inf.date_col=bajaj.date_col
+inner join `eicher motors` eic on eic.date_col=bajaj.date_col
+inner join `hero motocorp` her on her.date_col=bajaj.date_col;
+
+select * from Master_table order by `Date`;
+
+
+## 3.Part(1) to generate buy and sell signal. Store this in another table named 'bajaj2'. Perform this operation for all stocks.
+
+#bajaj auto
+
+create table bajaj
+select Date, `Close Price`,`20 Day MA`,lag(`20 Day MA`,1) over w as `20_MA_prev`,`50 Day MA`,lag(`50 Day MA`,1) over w as `50_MA_prev`
+from bajaj1
+window w as (order by `Date`);
+select * from bajaj;
+
+create table bajaj2
+select Date,`Close Price`,
+(case when `20 Day MA`>`50 Day MA`and`20_MA_prev`<`50_MA_prev` then 'BUY'
+	 when `20 Day MA`<`50 Day MA`and`20_MA_prev`>`50_MA_prev` then 'SELL'
+else 'HOLD' end) as 'Signal'
+from bajaj;
+select * from bajaj2;
+
+# eicher motors
+
+create table eicher
+select Date, `Close Price`,`20 Day MA`,lag(`20 Day MA`,1) over w as `20_MA_prev`,`50 Day MA`,lag(`50 Day MA`,1) over w as `50_MA_prev`
+from eicher1
+window w as (order by `Date`);
+
+select *from eicher;
+
+create table eicher2
+select Date,`Close Price`,
+(case when `20 Day MA`>`50 Day MA`and`20_MA_prev`<`50_MA_prev` then 'BUY'
+	 when `20 Day MA`< `50 Day MA` and `20_MA_prev`>`50_MA_prev` then 'SELL'
+else 'HOLD' end) as'Signal'
+from eicher;
+
+select *from eicher2;
+
+
+# hero motocrop
+create table hero
+select Date, `Close Price`,`20 Day MA`,lag(`20 Day MA`,1) over w as `20_MA_prev`,`50 Day MA`,lag(`50 Day MA`,1) over w as `50_MA_prev`
+from hero1
+window w as (order by `Date`);
+select *from hero;
+
+create table hero2
+select Date,`Close Price`,
+(case when `20 Day MA`>`50 Day MA`and`20_MA_prev`<`50_MA_prev` then 'BUY'
+	 when `20 Day MA`< `50 Day MA` and `20_MA_prev`>`50_MA_prev` then 'SELL'
+else 'HOLD' end) as'Signal'
+from hero;
+select *from hero2;
+
+# infosys 
+
+create table infosys_dup
+select Date, `Close Price`,`20 Day MA`,lag(`20 Day MA`,1) over w as `20_MA_prev`,`50 Day MA`,lag(`50 Day MA`,1) over w as `50_MA_prev`
+from infosys1
+window w as (order by `Date`);
+select *from infosys_dup;
+
+create table infosys2
+select Date,`Close Price`,
+(case when `20 Day MA`>`50 Day MA`and`20_MA_prev`<`50_MA_prev` then 'BUY'
+	 when `20 Day MA`< `50 Day MA` and `20_MA_prev`>`50_MA_prev` then 'SELL'
+else 'HOLD' end) as'Signal'
+from infosys_dup;
+select *from infosys2;
+
+# tcs
+
+create table tcs_dup
+select Date, `Close Price`,`20 Day MA`,lag(`20 Day MA`,1) over w as `20_MA_prev`,`50 Day MA`,lag(`50 Day MA`,1) over w as `50_MA_prev`
+from tcs1
+window w as (order by `Date`);
+select *from tcs_dup;
+
+create table tcs2
+select Date,`Close Price`,
+(case when `20 Day MA`>`50 Day MA`and`20_MA_prev`<`50_MA_prev` then 'BUY'
+	 when `20 Day MA`< `50 Day MA` and `20_MA_prev`>`50_MA_prev` then 'SELL'
+else 'HOLD' end) as'Signal'
+from tcs_dup;
+select *from tcs2;
+
+# tvs motors
+
+create table tvsmotors_dup
+select Date, `Close Price`,`20 Day MA`,lag(`20 Day MA`,1) over w as `20_MA_prev`,`50 Day MA`,lag(`50 Day MA`,1) over w as `50_MA_prev`
+from tvs1
+window w as (order by `Date`);
+select *from tvsmotors_dup;
+
+create table tvs2
+select Date,`Close Price`,
+(case when `20 Day MA`>`50 Day MA`and`20_MA_prev`<`50_MA_prev` then 'BUY'
+	 when `20 Day MA`< `50 Day MA` and `20_MA_prev`>`50_MA_prev` then 'SELL'
+else 'HOLD' end) as'Signal'
+from tvsmotors_dup;
+select *from tvs2;
+
+# drop unneccessary columns
+drop table bajaj;
+drop table eicher;
+drop table hero;
+drop table infosys_dup;
+drop table tcs_dup;
+drop table tvsmotors_dup;
+
+# 4.Create a User defined function, that takes the date as input and returns the signal for that particular
+# day (Buy/Sell/Hold) for the Bajaj stock.
+# only for the Bajaj stocks 
+
+delimiter $$
+
+create function input_signal_output(`date` date)
+returns char(20) deterministic
+begin
+declare value varchar(20);
+set value=(select 'Signal' from bajaj2 where Date=`date`);
+return value;
+end
+$$
+delimiter ;
+select input_signal_output('2015-07-24') as day_signal; 
