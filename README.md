@@ -6,7 +6,7 @@ The dataset provided here has been extracted from the NSE website. The Stock pri
 
 Objectives/ Results Expected
 
-1.Create a new table named 'bajaj1' containing the date, close price, 20 Day MA and 50 Day MA. (This has to be done for all 6 stocks.
+1.Create a new table named 'bajaj1' containing the date, close price, 20 Day MA and 50 Day MA. (This has to be done for all 6 stocks).
 
 2. Create a master table containing the date and close price of all the six stocks. (Column header for the price is the name of the stock).
 
